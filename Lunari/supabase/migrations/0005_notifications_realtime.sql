@@ -1,0 +1,13 @@
+-- ============================================================
+-- ENABLE REALTIME FOR NOTIFICATIONS
+--
+-- 0003 created the notifications table but never added it to the
+-- supabase_realtime publication, so postgres_changes subscribers never
+-- receive INSERT events for it — the client-side channel still reports
+-- SUBSCRIBED (that just means the websocket joined), it simply never gets
+-- fed any change events for a table outside the publication. messages and
+-- message_reactions already work because they were added to this
+-- publication when the project was first set up; notifications needs the
+-- same treatment now that something actually subscribes to it.
+-- ============================================================
+alter publication supabase_realtime add table public.notifications;

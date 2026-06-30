@@ -1,0 +1,39 @@
+<Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create a channel</DialogTitle>
+        </DialogHeader>
+        <form action={createChannel} className="space-y-3">
+          <input type="hidden" name="workspace_id" value={workspaceId} />
+          <div>
+            <label className="mb-1 block text-sm font-medium text-neutral-700">Name</label>
+            <Input type="text" name="name" required placeholder="e.g. general" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-neutral-700">
+            <input
+              type="checkbox"
+              name="is_private"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
+            />
+            Private channel
+          </label>
+          {isPrivate && (
+            <div>
+              <p className="mb-1 text-sm font-medium text-neutral-700">Add members</p>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-neutral-200 p-2">
+                {members.map((m) => (
+                  <label key={m.id} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" name="member_ids" value={m.id} />
+                    {m.display_name}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          <Button type="submit" className="w-full">
+            Create
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
