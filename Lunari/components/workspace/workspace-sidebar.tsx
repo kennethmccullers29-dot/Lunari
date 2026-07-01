@@ -34,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/optics/dropdown-menu";
-import { Command, Hash, Lock, Mic, Plus, UserPlus } from "lucide-react";
+import { CalendarDays, Command, Hash, LayoutDashboard, Lock, Mic, Plus, UserPlus } from "lucide-react";
 import { IconDotsVertical, IconLogout, IconUserCircle } from "@tabler/icons-react";
 
 function formatProfileTooltip(m: {
@@ -161,6 +161,28 @@ export function WorkspaceSidebar({
 
         <SidebarContent>
           <GettingStartedChecklist workspaceId={workspaceId} items={checklistItems} />
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/w/${workspaceId}/boards`}>
+                  <Link href={`/w/${workspaceId}/boards`}>
+                    <LayoutDashboard />
+                    <span>Boards</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname === `/w/${workspaceId}/calendar`}>
+                  <Link href={`/w/${workspaceId}/calendar`}>
+                    <CalendarDays />
+                    <span>Calendar</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
 
           <SidebarGroup>
             <SidebarGroupLabel>Channels</SidebarGroupLabel>
