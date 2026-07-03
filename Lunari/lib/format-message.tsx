@@ -1,6 +1,8 @@
 import { Fragment, type ReactNode } from "react";
 
-const INLINE_RE = /(\*[^*\n]+\*)|(_[^_\n]+_)|(~[^~\n]+~)|(`[^`\n]+`)/g;
+// Matches: *bold*, _italic_, ~strike~, `code`, @[Name](id)
+const INLINE_RE =
+  /(\*[^*\n]+\*)|(_[^_\n]+_)|(~[^~\n]+~)|(`[^`\n]+`)|(@\[[^\]]+\]\([^)]+\))/g;
 
 function formatInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
@@ -14,20 +16,34 @@ function formatInline(text: string, keyPrefix: string): ReactNode[] {
       nodes.push(text.slice(lastIndex, match.index));
     }
     const token = match[0];
-    const inner = token.slice(1, -1);
     const key = `${keyPrefix}-${i++}`;
-    if (token.startsWith("*")) {
-      nodes.push(<strong key={key}>{inner}</strong>);
-    } else if (token.startsWith("_")) {
-      nodes.push(<em key={key}>{inner}</em>);
-    } else if (token.startsWith("~")) {
-      nodes.push(<s key={key}>{inner}</s>);
-    } else {
+
+    if (token.startsWith("@[")) {
+      const nameMatch = token.match(/@\[([^\]]+)\]/);
+      const name = nameMatch?.[1] ?? token;
       nodes.push(
-        <code key={key} className="rounded bg-neutral-200/70 px-1 py-0.5 font-mono text-[13px]">
-          {inner}
-        </code>
+        <span
+          key={key}
+          className="rounded bg-[#611f69]/10 px-0.5 font-semibold text-[#611f69]"
+        >
+          @{name}
+        </span>
       );
+    } else {
+      const inner = token.slice(1, -1);
+      if (token.startsWith("*")) {
+        nodes.push(<strong key={key}>{inner}</strong>);
+      } else if (token.startsWith("_")) {
+        nodes.push(<em key={key}>{inner}</em>);
+      } else if (token.startsWith("~")) {
+        nodes.push(<s key={key}>{inner}</s>);
+      } else {
+        nodes.push(
+          <code key={key} className="rounded bg-neutral-200/70 px-1 py-0.5 font-mono text-[13px]">
+            {inner}
+          </code>
+        );
+      }
     }
     lastIndex = INLINE_RE.lastIndex;
   }
@@ -49,7 +65,9 @@ export function formatMessageText(text: string): ReactNode {
   while ((match = CODE_BLOCK_RE.exec(text))) {
     if (match.index > lastIndex) {
       segments.push(
-        <Fragment key={`t-${i}`}>{formatInline(text.slice(lastIndex, match.index), `t-${i}`)}</Fragment>
+        <Fragment key={`t-${i}`}>
+          {formatInline(text.slice(lastIndex, match.index), `t-${i}`)}
+        </Fragment>
       );
     }
     segments.push(
@@ -64,7 +82,9 @@ export function formatMessageText(text: string): ReactNode {
     i++;
   }
   if (lastIndex < text.length) {
-    segments.push(<Fragment key={`t-${i}`}>{formatInline(text.slice(lastIndex), `t-${i}`)}</Fragment>);
+    segments.push(
+      <Fragment key={`t-${i}`}>{formatInline(text.slice(lastIndex), `t-${i}`)}</Fragment>
+    );
   }
   return segments;
 }

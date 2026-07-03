@@ -12,7 +12,11 @@ export function targetColumn(target: Target) {
     : { column: "dm_conversation_id" as const, id: target.dmConversationId };
 }
 
-type Attachment = { url: string; type: "image" | "gif" };
+type Attachment = {
+  url: string;
+  type: "image" | "gif" | "file" | "voice";
+  name?: string;
+};
 
 export function useMessages(target: Target) {
   const { column, id } = targetColumn(target);
@@ -53,6 +57,25 @@ export function useMessages(target: Target) {
             setMessages((prev) => [...prev, payload.new as Message]);
           }
         )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "messages", filter: `${column}=eq.${id}` },
+          (payload) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === (payload.new as Message).id ? (payload.new as Message) : m
+              )
+            );
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "messages", filter: `${column}=eq.${id}` },
+          (payload) => {
+            const deletedId = (payload.old as { id: string }).id;
+            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
+          }
+        )
         .subscribe();
     });
 
@@ -63,7 +86,7 @@ export function useMessages(target: Target) {
   }, [column, id]);
 
   const sendMessage = useCallback(
-    async (body: string, attachment?: Attachment) => {
+    async (body: string, attachment?: Attachment, mentionIds: string[] = []) => {
       const trimmed = body.trim();
       if (!trimmed && !attachment) return;
 
@@ -71,15 +94,42 @@ export function useMessages(target: Target) {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) return;
 
-      await supabase.from("messages").insert({
-        body: trimmed,
-        sender_id: userData.user.id,
-        [column]: id,
-        ...(attachment
-          ? { attachment_url: attachment.url, attachment_type: attachment.type }
-          : {}),
-      });
+      const { data: msgData } = await supabase
+        .from("messages")
+        .insert({
+          body: trimmed,
+          sender_id: userData.user.id,
+          [column]: id,
+          ...(attachment
+            ? {
+                attachment_url: attachment.url,
+                attachment_type: attachment.type,
+                ...(attachment.name ? { attachment_name: attachment.name } : {}),
+              }
+            : {}),
+        })
+        .select("id")
+        .single();
+
+      // Notify mentioned users
+      if (msgData && mentionIds.length > 0) {
+        const notifications = mentionIds
+          .filter((uid) => uid !== userData.user!.id)
+          .map((uid) => ({
+            user_id: uid,
+            actor_id: userData.user!.id,
+            message_id: msgData.id,
+            channel_id: "channelId" in target ? target.channelId : null,
+            dm_conversation_id:
+              "dmConversationId" in target ? target.dmConversationId : null,
+          }));
+
+        if (notifications.length > 0) {
+          await supabase.from("notifications").insert(notifications);
+        }
+      }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [column, id]
   );
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/optics/label";
 import { Button } from "@/components/optics/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/optics/avatar";
 import { EmojiButton } from "@/components/emoji/emoji-button";
+import { MfaSettings } from "@/components/profile/mfa-settings";
 import { uploadAvatar } from "@/lib/storage";
 import { updateProfile } from "@/lib/actions/profile";
 import { X } from "lucide-react";
@@ -218,6 +219,16 @@ export function EditProfileModal({
             </div>
           </div>
         </form>
+
+        {/* Security section */}
+        <div className="pt-2">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium text-muted-foreground">Security</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <MfaSettings />
+        </div>
 
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>

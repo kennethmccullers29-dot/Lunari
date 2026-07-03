@@ -190,7 +190,7 @@ function DialogPopup({
 								className={cn(
 									"relative row-start-2 grid w-full min-w-0 gap-4 border bg-muted p-2 shadow-lg duration-200",
 									"max-w-[calc(100%-2rem)] rounded-3xl sm:max-w-lg",
-									"max-sm:overflow-y-auto max-sm:border-none",
+									"max-sm:overflow-y-auto max-sm:border-none max-sm:max-h-[calc(100dvh-3rem)]",
 									cssTransitionConfig,
 									cssAnimationConfig,
 									className,
@@ -198,7 +198,7 @@ function DialogPopup({
 							>
 								<div
 									className={cn(
-										"bg-background flex flex-col w-full gap-8 rounded-2xl pt-6 px-6 pb-0 shadow-lg duration-200 sm:max-w-lg overflow-hidden",
+										"bg-background flex flex-col w-full gap-4 sm:gap-6 rounded-2xl pt-5 px-4 sm:pt-6 sm:px-6 pb-0 shadow-lg duration-200 sm:max-w-lg overflow-hidden",
 										containerClassName,
 									)}
 								>
@@ -210,7 +210,7 @@ function DialogPopup({
 												<Button
 													variant="outline"
 													size="icon"
-													className="rounded-full squircle-none size-6 p-0 -mr-4 -mt-2 absolute top-6 right-8"
+													className="rounded-full squircle-none size-8 p-0 absolute top-4 right-5 sm:size-6 sm:-mr-4 sm:-mt-2 sm:top-6 sm:right-8"
 												>
 													<XIcon className="!size-4" />
 													<span className="sr-only">Close</span>

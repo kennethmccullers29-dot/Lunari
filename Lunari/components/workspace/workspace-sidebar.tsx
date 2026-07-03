@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "@/lib/actions/auth";
@@ -9,6 +10,8 @@ import { StartDmModal } from "@/components/dm/start-dm-modal";
 import { StatusDot } from "@/components/presence/status-dot";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/optics/avatar";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { SearchModal } from "@/components/search/search-modal";
+import { MembersModal } from "@/components/workspace/members-modal";
 import { EditProfileModal } from "@/components/profile/edit-profile-modal";
 import { GettingStartedChecklist } from "@/components/onboarding/getting-started-checklist";
 import { InviteModal } from "@/components/invite/invite-modal";
@@ -27,15 +30,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/optics/dropdown-menu";
-import { CalendarDays, Command, Hash, LayoutDashboard, Lock, Mic, Plus, UserPlus } from "lucide-react";
+import { BellOff, CalendarDays, Check, Command, Hash, LayoutDashboard, LayoutList, Lock, Mic, Monitor, Moon, Plus, Search, Settings2, Sparkles, Sun, UserPlus } from "lucide-react";
 import { IconDotsVertical, IconLogout, IconUserCircle } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
+import { useDnd } from "@/components/notifications/dnd-context";
 
 function formatProfileTooltip(m: {
   full_name: string | null;
@@ -59,8 +67,9 @@ type Member = {
   pronouns: string | null;
   status_emoji: string | null;
   status_text: string | null;
+  role: "owner" | "admin" | "member";
 };
-type ChannelItem = { id: string; name: string; is_private: boolean; type: "text" | "voice" };
+type ChannelItem = { id: string; name: string; is_private: boolean; type: "text" | "voice" | "forum" };
 type DmItem = { id: string; label: string };
 
 export function WorkspaceSidebar({
@@ -90,6 +99,20 @@ export function WorkspaceSidebar({
   const [modal, setModal] = useState<"channel" | "dm" | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [membersModalOpen, setMembersModalOpen] = useState(false);
+
+  // Cmd+K / Ctrl+K global shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, []);
   const [liveJoinCode] = useState(joinCode);
   const isOwnerOrAdmin = currentUserRole === "owner" || currentUserRole === "admin";
   const statuses = usePresenceStatus(currentUser.id, members);
@@ -97,7 +120,17 @@ export function WorkspaceSidebar({
   const { unreadByTarget } = useWorkspaceActivity();
   const textChannels = channels.filter((c) => c.type === "text");
   const voiceChannels = channels.filter((c) => c.type === "voice");
+  const forumChannels = channels.filter((c) => c.type === "forum");
   const voiceCounts = useVoiceChannelCounts(voiceChannels.map((c) => c.id));
+
+  const { theme, setTheme } = useTheme();
+  const { isDnd, toggleDnd } = useDnd();
+  const { setOpenMobile } = useSidebar();
+
+  // Auto-close mobile sidebar when navigating to a new page
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [pathname, setOpenMobile]);
 
   const profileComplete = !!(currentUser.avatar_url || currentUser.full_name);
   const checklistItems = [
@@ -147,6 +180,15 @@ export function WorkspaceSidebar({
               </SidebarMenuButton>
               <button
                 type="button"
+                aria-label="Search"
+                title="Search (⌘K)"
+                onClick={() => setSearchOpen(true)}
+                className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+              >
+                <Search className="size-4" />
+              </button>
+              <button
+                type="button"
                 aria-label="Invite people"
                 title="Invite people"
                 onClick={() => setInviteOpen(true)}
@@ -162,6 +204,11 @@ export function WorkspaceSidebar({
         <SidebarContent>
           <GettingStartedChecklist workspaceId={workspaceId} items={checklistItems} />
 
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
           <SidebarGroup>
             <SidebarGroupLabel>Tools</SidebarGroupLabel>
             <SidebarMenu>
@@ -181,9 +228,23 @@ export function WorkspaceSidebar({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith(`/w/${workspaceId}/ai`)}>
+                  <Link href={`/w/${workspaceId}/ai`}>
+                    <Sparkles />
+                    <span>AI Assistant</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
+          </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut", delay: 0.05 }}
+          >
           <SidebarGroup>
             <SidebarGroupLabel>Channels</SidebarGroupLabel>
             <SidebarGroupAction onClick={() => setModal("channel")}>
@@ -213,6 +274,37 @@ export function WorkspaceSidebar({
               )}
             </SidebarMenu>
           </SidebarGroup>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut", delay: 0.1 }}
+          >
+          {forumChannels.length > 0 && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Forums</SidebarGroupLabel>
+              <SidebarGroupAction onClick={() => setModal("channel")}>
+                <Plus />
+                <span className="sr-only">Add forum channel</span>
+              </SidebarGroupAction>
+              <SidebarMenu>
+                {forumChannels.map((c) => {
+                  const href = `/w/${workspaceId}/c/${c.id}`;
+                  return (
+                    <SidebarMenuItem key={c.id}>
+                      <SidebarMenuButton asChild isActive={pathname.startsWith(href)}>
+                        <a href={href}>
+                          <LayoutList />
+                          <span className="truncate">{c.name}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
 
           {voiceChannels.length > 0 && (
             <SidebarGroup>
@@ -269,9 +361,19 @@ export function WorkspaceSidebar({
               )}
             </SidebarMenu>
           </SidebarGroup>
+          </motion.div>
 
           <SidebarGroup>
             <SidebarGroupLabel>Members</SidebarGroupLabel>
+            {isOwnerOrAdmin && (
+              <SidebarGroupAction
+                onClick={() => setMembersModalOpen(true)}
+                title="Manage members"
+              >
+                <Settings2 className="size-3.5" />
+                <span className="sr-only">Manage members</span>
+              </SidebarGroupAction>
+            )}
             <SidebarMenu>
               {members.map((m) => (
                 <SidebarMenuItem key={m.id}>
@@ -327,6 +429,33 @@ export function WorkspaceSidebar({
                   align="end"
                   className="w-(--anchor-width) min-w-56"
                 >
+                  <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <Sun className="size-4" />
+                    Light
+                    {theme === "light" && <Check className="ml-auto size-3.5" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <Moon className="size-4" />
+                    Dark
+                    {theme === "dark" && <Check className="ml-auto size-3.5" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <Monitor className="size-4" />
+                    System
+                    {theme === "system" && <Check className="ml-auto size-3.5" />}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={toggleDnd}>
+                    <BellOff className="size-4" />
+                    Do Not Disturb
+                    {isDnd && <Check className="ml-auto size-3.5" />}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={() => setEditProfileOpen(true)}>
                     <IconUserCircle className="size-4" />
                     Edit profile
@@ -373,6 +502,21 @@ export function WorkspaceSidebar({
           initialJoinCode={liveJoinCode}
           isOwnerOrAdmin={isOwnerOrAdmin}
           onClose={() => setInviteOpen(false)}
+        />
+      )}
+      {searchOpen && (
+        <SearchModal
+          workspaceId={workspaceId}
+          onClose={() => setSearchOpen(false)}
+        />
+      )}
+      {membersModalOpen && (
+        <MembersModal
+          workspaceId={workspaceId}
+          members={members}
+          currentUserId={currentUser.id}
+          currentUserRole={currentUserRole}
+          onClose={() => setMembersModalOpen(false)}
         />
       )}
     </>

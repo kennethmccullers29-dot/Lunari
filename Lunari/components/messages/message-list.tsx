@@ -1,7 +1,16 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
+import { motion } from "motion/react";
 import { MessageItem } from "@/components/messages/message-item";
+import {
+  MessageScrollerProvider,
+  MessageScroller,
+  MessageScrollerViewport,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerButton,
+} from "@/components/ui/message-scroller";
 import type { Message } from "@/lib/types/database";
 import type { ReactionPill } from "@/lib/hooks/use-message-reactions";
 import type { MemberInfo } from "@/lib/types/member-info";
@@ -12,6 +21,9 @@ export function MessageList({
   membersById,
   reactionsByMessageId,
   onToggleReaction,
+  onProfileClick,
+  currentUserId,
+  isAdminOrOwner = false,
   emptyIcon = "💬",
   emptyTitle = "No messages yet",
 }: {
@@ -20,18 +32,28 @@ export function MessageList({
   membersById: Record<string, MemberInfo>;
   reactionsByMessageId: Record<string, ReactionPill[]>;
   onToggleReaction: (messageId: string, emoji: string) => void;
+  onProfileClick?: (userId: string) => void;
+  currentUserId?: string;
+  isAdminOrOwner?: boolean;
   emptyIcon?: string;
   emptyTitle?: string;
 }) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  // IDs recorded after each DOM commit — keeps render phase pure (no mutation)
+  const seenIdsRef = useRef(new Set<string>());
+  // True once the initial batch of messages has been committed to the DOM
+  const initialLoadDoneRef = useRef(false);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
-  }, [messages.length]);
+  // Run after every commit so seenIds is always one render behind.
+  // That one-render lag is exactly what makes new messages animate:
+  // during the render they aren't in seenIds yet, animation plays, then we record them.
+  useLayoutEffect(() => {
+    messages.forEach((m) => seenIdsRef.current.add(m.id));
+    if (messages.length > 0) initialLoadDoneRef.current = true;
+  }, [messages]);
 
   if (loading) {
     return (
-      <div className="flex-1 p-4 text-sm text-neutral-400">Loading messages…</div>
+      <div className="flex-1 p-4 text-sm text-muted-foreground">Loading messages…</div>
     );
   }
 
@@ -42,24 +64,49 @@ export function MessageList({
           {emptyIcon}
         </div>
         <p className="text-sm font-medium text-foreground">{emptyTitle}</p>
-        <p className="text-sm text-muted-foreground">Send a message to get the conversation started.</p>
+        <p className="text-sm text-muted-foreground">
+          Send a message to get the conversation started.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto py-2">
-      {messages.map((m) => (
-        <MessageItem
-          key={m.id}
-          message={m}
-          senderName={membersById[m.sender_id]?.name ?? "Unknown"}
-          senderAvatarUrl={membersById[m.sender_id]?.avatarUrl}
-          reactions={reactionsByMessageId[m.id] ?? []}
-          onToggleReaction={(emoji) => onToggleReaction(m.id, emoji)}
-        />
-      ))}
-      <div ref={bottomRef} />
-    </div>
+    <MessageScrollerProvider autoScroll defaultScrollPosition="end">
+      <MessageScroller className="flex-1">
+        <MessageScrollerViewport>
+          <MessageScrollerContent className="gap-0 py-2">
+            {messages.map((m) => {
+              // A message is "new" only after the initial batch has been committed
+              // and this ID hasn't been committed yet
+              const isNew = initialLoadDoneRef.current && !seenIdsRef.current.has(m.id);
+
+              return (
+                <MessageScrollerItem key={m.id} messageId={m.id}>
+                  <motion.div
+                    initial={isNew ? { opacity: 0, y: 8 } : false}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                  >
+                    <MessageItem
+                      message={m}
+                      senderName={membersById[m.sender_id]?.name ?? "Unknown"}
+                      senderAvatarUrl={membersById[m.sender_id]?.avatarUrl}
+                      reactions={reactionsByMessageId[m.id] ?? []}
+                      onToggleReaction={(emoji) => onToggleReaction(m.id, emoji)}
+                      membersById={membersById}
+                      onProfileClick={onProfileClick}
+                      currentUserId={currentUserId}
+                      isAdminOrOwner={isAdminOrOwner}
+                    />
+                  </motion.div>
+                </MessageScrollerItem>
+              );
+            })}
+          </MessageScrollerContent>
+        </MessageScrollerViewport>
+        <MessageScrollerButton />
+      </MessageScroller>
+    </MessageScrollerProvider>
   );
 }

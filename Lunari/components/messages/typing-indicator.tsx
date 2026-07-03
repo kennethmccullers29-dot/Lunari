@@ -9,7 +9,7 @@ export function TypingIndicator({ names }: { names: string[] }) {
   if (names.length === 0) return null;
 
   return (
-    <div className="flex h-5 items-center gap-1.5 px-5 text-xs text-muted-foreground">
+    <div className="flex h-5 items-center gap-1.5 px-3 text-xs text-muted-foreground sm:px-5">
       <span className="flex items-center gap-0.5">
         <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
         <span className="size-1 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />

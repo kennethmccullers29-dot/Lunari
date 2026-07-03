@@ -31,7 +31,7 @@ export function EmojiButton({
             title={label}
             aria-label={label}
             className={clsx(
-              "flex h-7 w-7 items-center justify-center rounded text-base hover:bg-neutral-200",
+              "flex h-7 w-7 items-center justify-center rounded text-base hover:bg-muted",
               className
             )}
           >

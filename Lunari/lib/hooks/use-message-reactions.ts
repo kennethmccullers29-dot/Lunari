@@ -9,6 +9,7 @@ export interface ReactionPill {
   emoji: string;
   count: number;
   reactedByMe: boolean;
+  reactorIds: string[];
 }
 
 export function useMessageReactions(target: Target) {
@@ -71,9 +72,15 @@ export function useMessageReactions(target: Target) {
       const pill = pills.find((p) => p.emoji === row.emoji);
       if (pill) {
         pill.count += 1;
+        pill.reactorIds.push(row.user_id);
         if (row.user_id === currentUserId) pill.reactedByMe = true;
       } else {
-        pills.push({ emoji: row.emoji, count: 1, reactedByMe: row.user_id === currentUserId });
+        pills.push({
+          emoji: row.emoji,
+          count: 1,
+          reactedByMe: row.user_id === currentUserId,
+          reactorIds: [row.user_id],
+        });
       }
     }
     return map;

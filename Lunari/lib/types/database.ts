@@ -31,7 +31,7 @@ export interface WorkspaceMember {
   joined_at: string;
 }
 
-export type ChannelType = "text" | "voice";
+export type ChannelType = "text" | "voice" | "forum";
 
 export interface Channel {
   id: string;
@@ -70,7 +70,8 @@ export interface Message {
   created_at: string;
   edited_at: string | null;
   attachment_url: string | null;
-  attachment_type: "image" | "gif" | null;
+  attachment_type: "image" | "gif" | "file" | "voice" | null;
+  attachment_name: string | null;
 }
 
 export interface MessageReaction {

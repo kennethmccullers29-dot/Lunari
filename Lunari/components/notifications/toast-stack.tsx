@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useDnd } from "@/components/notifications/dnd-context";
 
 type ToastItem = {
   id: string;
@@ -25,6 +26,9 @@ const TOAST_DURATION_MS = 5000;
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const idRef = useRef(0);
+  const { isDnd } = useDnd();
+  const isDndRef = useRef(isDnd);
+  useEffect(() => { isDndRef.current = isDnd; }, [isDnd]);
 
   const dismiss = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -32,6 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const showToast = useCallback(
     (toast: Omit<ToastItem, "id">) => {
+      if (isDndRef.current) return;
       const id = String(idRef.current++);
       setToasts((prev) => [...prev, { ...toast, id }]);
       setTimeout(() => dismiss(id), TOAST_DURATION_MS);
@@ -42,7 +47,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+      <div className="pointer-events-none fixed bottom-4 left-4 right-4 z-50 flex flex-col gap-2 sm:left-auto sm:right-4 sm:w-80">
         {toasts.map((t) => (
           <button
             key={t.id}

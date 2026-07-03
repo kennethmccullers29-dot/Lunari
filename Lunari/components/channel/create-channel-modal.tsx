@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createChannel } from "@/lib/actions/channels";
-import { Hash, Mic } from "lucide-react";
+import { Hash, Mic, LayoutList } from "lucide-react";
 import {
   Dialog,
   DialogPopup,
@@ -25,7 +25,7 @@ export function CreateChannelModal({
   onClose: () => void;
 }) {
   const [isPrivate, setIsPrivate] = useState(false);
-  const [channelType, setChannelType] = useState<"text" | "voice">("text");
+  const [channelType, setChannelType] = useState<"text" | "voice" | "forum">("text");
 
   return (
     <Dialog open onOpenChange={(open: boolean) => !open && onClose()}>
@@ -38,8 +38,12 @@ export function CreateChannelModal({
           <input type="hidden" name="workspace_id" value={workspaceId} />
           <input type="hidden" name="type" value={channelType} />
 
-          <div className="grid grid-cols-2 gap-2">
-            {(["text", "voice"] as const).map((t) => (
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { type: "text", icon: <Hash className="size-4 shrink-0" />, label: "Text" },
+              { type: "voice", icon: <Mic className="size-4 shrink-0" />, label: "Voice" },
+              { type: "forum", icon: <LayoutList className="size-4 shrink-0" />, label: "Forum" },
+            ] as const).map(({ type: t, icon, label }) => (
               <button
                 key={t}
                 type="button"
@@ -47,20 +51,26 @@ export function CreateChannelModal({
                 className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${
                   channelType === t
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-neutral-200 text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50"
+                    : "border-border text-muted-foreground hover:border-border/70 hover:bg-muted/50"
                 }`}
               >
-                {t === "text" ? <Hash className="size-4 shrink-0" /> : <Mic className="size-4 shrink-0" />}
-                <span className="font-medium capitalize">{t}</span>
+                {icon}
+                <span className="font-medium">{label}</span>
               </button>
             ))}
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-sm mb-1 font-medium">Name</Label>
-            <Input className="col-span-3" type="text" name="name" required placeholder={channelType === "voice" ? "e.g. lounge" : "e.g. general"} />
+            <Input
+              className="col-span-3"
+              type="text"
+              name="name"
+              required
+              placeholder={channelType === "voice" ? "e.g. lounge" : channelType === "forum" ? "e.g. ideas" : "e.g. general"}
+            />
           </div>
-          <label className="flex items-center gap-2 text-sm text-neutral-700">
+          <label className="flex items-center gap-2 text-sm text-foreground/80">
             <input
               type="checkbox"
               name="is_private"
@@ -71,8 +81,8 @@ export function CreateChannelModal({
           </label>
           {isPrivate && (
             <div>
-              <p className="mb-1 text-sm font-medium text-neutral-700">Add members</p>
-              <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-neutral-200 p-2">
+              <p className="mb-1 text-sm font-medium text-foreground/80">Add members</p>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-md border border-border p-2">
                 {members.map((m) => (
                   <label key={m.id} className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="member_ids" value={m.id} />

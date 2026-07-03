@@ -11,7 +11,10 @@ export async function createChannel(formData: FormData) {
     .replace(/\s+/g, "-");
   const isPrivate = formData.get("is_private") === "on";
   const memberIds = formData.getAll("member_ids").map(String);
-  const type = formData.get("type") === "voice" ? "voice" : "text";
+  const rawType = String(formData.get("type") ?? "text");
+  const type = (["text", "voice", "forum"] as const).includes(rawType as "text" | "voice" | "forum")
+    ? (rawType as "text" | "voice" | "forum")
+    : "text";
 
   if (!workspaceId || !name) {
     redirect(`/w/${workspaceId}?error=Channel name is required`);
@@ -37,4 +40,5 @@ export async function createChannel(formData: FormData) {
   } else {
     redirect(`/w/${workspaceId}/c/${channel.id}`);
   }
+  // forum channels also use /c/[channelId] — type is detected at that route
 }

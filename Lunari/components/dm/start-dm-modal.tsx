@@ -20,18 +20,18 @@ export function StartDmModal({
 }) {
   return (
     <Dialog open onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogPopup>
+      <DialogPopup containerClassName="pb-6">
         <DialogHeader>
           <DialogTitle>New message</DialogTitle>
         </DialogHeader>
         <form action={startDm} className="space-y-3">
           <input type="hidden" name="workspace_id" value={workspaceId} />
-          <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-neutral-200 p-2">
+          <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-border p-2">
             {members.length === 0 && (
-              <p className="text-sm text-neutral-500">No other members yet.</p>
+              <p className="text-sm text-muted-foreground">No other members yet.</p>
             )}
             {members.map((m) => (
-              <label key={m.id} className="flex items-center gap-2 text-sm">
+              <label key={m.id} className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
                 <input type="checkbox" name="member_ids" value={m.id} />
                 {m.display_name}
               </label>

@@ -12,6 +12,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/notifications/toast-stack";
+import { useDnd } from "@/components/notifications/dnd-context";
 import type { Message } from "@/lib/types/database";
 
 type TargetRef = { id: string; label: string };
@@ -66,6 +67,9 @@ export function WorkspaceActivityProvider({
   const pathname = usePathname();
   const router = useRouter();
   const { showToast } = useToast();
+  const { isDnd } = useDnd();
+  const isDndRef = useRef(isDnd);
+  useEffect(() => { isDndRef.current = isDnd; }, [isDnd]);
   const activeTargetKey = deriveActiveTargetKey(pathname ?? "");
   // Read inside the realtime handler via ref rather than as an effect
   // dependency — depending on activeTargetKey directly would tear down and
@@ -178,7 +182,7 @@ export function WorkspaceActivityProvider({
               },
             });
 
-            if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+            if (!isDndRef.current && typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
               new Notification(isDm ? senderName : `${senderName} in ${label}`, {
                 body: message.body || undefined,
               });

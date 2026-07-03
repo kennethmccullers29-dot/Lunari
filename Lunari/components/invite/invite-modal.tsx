@@ -81,7 +81,7 @@ export function InviteModal({
 
   return (
     <Dialog open onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogPopup className="max-w-md">
+      <DialogPopup className="max-w-md" containerClassName="pb-6">
         <DialogHeader>
           <DialogTitle>Invite people to {workspaceName}</DialogTitle>
           <DialogDescription>

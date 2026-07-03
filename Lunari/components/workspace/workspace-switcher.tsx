@@ -28,7 +28,7 @@ export function WorkspaceSwitcher({
   const { unreadByWorkspace } = useWorkspaceActivity();
 
   return (
-    <Sidebar collapsible="none" className="w-[calc(var(--sidebar-width-icon)+16px)]! border-r">
+    <Sidebar collapsible="none" className="w-[calc(var(--sidebar-width-icon)+16px)]! border-r max-md:hidden">
       <SidebarContent>
         <SidebarGroup className="p-0">
           <SidebarGroupContent className="flex flex-col items-center px-0 py-2">

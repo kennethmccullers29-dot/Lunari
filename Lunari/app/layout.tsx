@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import { TooltipProvider } from "@/components/optics/tooltip";
 import { ToastProvider } from "@/components/notifications/toast-stack";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import { DndProvider } from "@/components/notifications/dnd-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,11 +35,16 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <TooltipProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </TooltipProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <DndProvider>
+            <TooltipProvider>
+              <ToastProvider>{children}</ToastProvider>
+            </TooltipProvider>
+          </DndProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

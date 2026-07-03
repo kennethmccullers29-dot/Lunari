@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ChannelHeader } from "@/components/channel/channel-header";
-import { MessageView } from "@/components/messages/message-view";
+import { ChannelView } from "@/components/messages/channel-view";
 
 export default async function DmPage({
   params,
@@ -34,10 +34,18 @@ export default async function DmPage({
 
   const title = others.map((o) => o.display_name).join(", ") || "Conversation";
 
-  const { data: memberData } = await supabase
-    .from("workspace_members")
-    .select("profiles(id, display_name, avatar_url)")
-    .eq("workspace_id", workspaceId);
+  const [{ data: memberData }, { data: myMembership }] = await Promise.all([
+    supabase
+      .from("workspace_members")
+      .select("profiles(id, display_name, avatar_url)")
+      .eq("workspace_id", workspaceId),
+    supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userData.user.id)
+      .single(),
+  ]);
 
   type MemberProfile = { id: string; display_name: string; avatar_url: string | null };
   const memberRows = (memberData ?? []) as unknown as { profiles: MemberProfile | null }[];
@@ -49,17 +57,19 @@ export default async function DmPage({
       .map((p) => [p.id, { name: p.display_name, avatarUrl: p.avatar_url }])
   );
 
+  const isAdminOrOwner =
+    myMembership?.role === "owner" || myMembership?.role === "admin";
+
   return (
-    <>
-      <ChannelHeader icon="@" title={title} />
-      <MessageView
-        target={{ dmConversationId: conversation.id }}
-        membersById={membersById}
-        currentUserId={userData.user.id}
-        placeholder={`Message ${title}`}
-        emptyIcon="👋"
-        emptyTitle={`This is the beginning of your conversation with ${title}`}
-      />
-    </>
+    <ChannelView
+      header={<ChannelHeader icon="@" title={title} />}
+      target={{ dmConversationId: conversation.id }}
+      membersById={membersById}
+      currentUserId={userData.user.id}
+      isAdminOrOwner={isAdminOrOwner}
+      placeholder={`Message ${title}`}
+      emptyIcon="👋"
+      emptyTitle={`This is the beginning of your conversation with ${title}`}
+    />
   );
 }

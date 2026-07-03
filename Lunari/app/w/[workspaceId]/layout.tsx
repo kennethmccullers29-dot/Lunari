@@ -37,7 +37,7 @@ export default async function WorkspaceLayout({
   const { data: memberData } = await supabase
     .from("workspace_members")
     .select(
-      "user_id, profiles(id, display_name, status, avatar_url, full_name, title, pronouns, status_emoji, status_text)"
+      "role, user_id, profiles(id, display_name, status, avatar_url, full_name, title, pronouns, status_emoji, status_text)"
     )
     .eq("workspace_id", workspaceId);
 
@@ -52,11 +52,12 @@ export default async function WorkspaceLayout({
     status_emoji: string | null;
     status_text: string | null;
   };
-  const memberRows = (memberData ?? []) as unknown as { profiles: MemberProfile | null }[];
+  type MemberRow = { role: string; profiles: MemberProfile | null };
+  const memberRows = (memberData ?? []) as unknown as MemberRow[];
 
   const members = memberRows
-    .map((row) => row.profiles)
-    .filter((p): p is MemberProfile => !!p)
+    .filter((row): row is { role: string; profiles: MemberProfile } => !!row.profiles)
+    .map((row) => ({ ...row.profiles, role: row.role as "owner" | "admin" | "member" }))
     .sort((a, b) => a.display_name.localeCompare(b.display_name));
 
   const currentUser = members.find((m) => m.id === userData.user!.id);
