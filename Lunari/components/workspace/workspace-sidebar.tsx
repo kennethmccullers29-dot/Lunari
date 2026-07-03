@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/optics/dropdown-menu";
-import { BellOff, CalendarDays, Check, Command, Hash, LayoutDashboard, LayoutList, Lock, Mic, Monitor, Moon, Plus, Search, Settings2, Sparkles, Sun, UserPlus } from "lucide-react";
+import { BellOff, BookOpen, CalendarDays, Check, Command, CreditCard, Hash, LayoutDashboard, LayoutList, Lock, Mic, Monitor, Moon, Plus, Search, Settings2, Sparkles, Sun, UserPlus } from "lucide-react";
 import { IconDotsVertical, IconLogout, IconUserCircle } from "@tabler/icons-react";
 import { useTheme } from "next-themes";
 import { useDnd } from "@/components/notifications/dnd-context";
@@ -233,6 +233,22 @@ export function WorkspaceSidebar({
                   <Link href={`/w/${workspaceId}/ai`}>
                     <Sparkles />
                     <span>AI Assistant</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith(`/w/${workspaceId}/wiki`)}>
+                  <Link href={`/w/${workspaceId}/wiki`}>
+                    <BookOpen />
+                    <span>Wiki</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={pathname.startsWith(`/w/${workspaceId}/billing`)}>
+                  <Link href={`/w/${workspaceId}/billing`}>
+                    <CreditCard />
+                    <span>Billing</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
